@@ -1,0 +1,155 @@
+\documentclass[11pt]{article}
+\usepackage[frenchb]{babel}
+\usepackage[table]{xcolor}
+\usepackage{mathtools}
+\usepackage[a4paper]{geometry}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath,esint}
+\usepackage{calligra}
+\usepackage{calrsfs}
+\usepackage[mathscr]{euscript}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{lscape}
+\usetikzlibrary{shapes}
+\usepackage{minted}
+\usepackage{fullpage}
+\title{Examen machine Calcul parallèle}
+\author{Macs $3^{\mbox{ème}}$}
+\usepackage{fontspec}
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{verbatim}
+
+\makeatletter
+\def\inverseverbatim{%
+  \color{white}\scriptsize
+  \def\verbatim@processline{%
+    {\setbox0=\hbox{\the\verbatim@line}%
+    \hsize=\wd0 \the\verbatim@line\par}}%
+  \@minipagetrue
+  \@tempswatrue
+  \@totalleftmargin\z@
+  \setbox0=\vbox\bgroup \verbatim
+}
+\def\endinverseverbatim{%
+  \endverbatim
+  \unskip\setbox0=\lastbox
+  \egroup
+  \colorbox{black}{\box0}%
+}
+\makeatother
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\definecolor{darkgreen}{rgb}{0.,0.3,0.}
+
+\begin{document}
+\maketitle
+
+\section{Automate cellulaire}
+
+Le but de ce programme est d'étudier des automates cellulaires très simples en \textbf{une} dimension.
+
+Un automate cellulaire consiste en une grille régulière de cellule (ici en une dimension) pouvant avoir plusieurs 
+"états" (ici deux états : allumée = 1 ou éteinte = 0) qui seront modifiés selon l'état des cellules voisines 
+(immédiates ou non) en suivant des règles fixes à chaque itération. 
+
+On appelle \textbf{degré de voisinage} le nombre de cellule que l'on doit visiter avant d'atteindre une cellule spécifique.
+Ainsi, pour une cellule donnée, ses cellules adjacentes sont de degré de voisinage égal à un.
+
+On appelle \textbf{rang} le degré maximal de voisinage des cellules prises en compte pour le calcul de l'état suivant.
+
+Ainsi, l'automate le plus simple sera celui où on ne prendra que des cellules adjacentes (et elle-même) pour le calcul de 
+l'état suivant (allumée ou éteinte). Il existe dont huit "motifs" différents (trois cellules donc $2^{3}$ configurations possibles)
+pour lesquels il faut fixer une règle (à savoir si la cellule sera allumée ou éteinte à la prochaine itération) :
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|c|c|c|}\hline
+Motif & 111 & 110 & 101 & 100 & 011 & 010 & 001 & 000 \\ \hline
+\end{tabular}
+\end{center}
+
+Il y aura donc dans ce cas là $2^{8} = 256$ configurations (ou règles) possibles qu'on représentera par un nombre binaire variant de 0 à 255. 
+
+Par exemple, la règle numéro 30 (en binaire $30 = 00011110$) sera :
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|c|c|c|} \hline
+Motif initial (t) & 111 & 110 & 101 & 100 & 011 & 010 & 001 & 000 \\ \hline
+Valeur suivante cellule centrale (t+1) & 0 & 0 & 0 & 1 & 1 & 1 & 1 & 0 \\ \hline
+\end{tabular}
+\end{center}
+
+En prenant les cellules adjacentes et les cellules de degré de voisinage égal à deux, on aura donc cinq cellules prises en compte dans le calcul d'une
+cellule (la cellule centrale dont on veut modifier la valeur, deux cellules à gauche et deux cellules à droite) ce qui nous fera $2^{5} = 32$ motifs 
+possibles pour lesquelles il faut établir une règle. Le nombre de règles possibles sera alors de $2^{32} =  4294 967 296$ règles possibles !
+
+Dans notre cas, on veut étudier l'influence de ces règles en regardant l'évolution d'une grille de cellule dont au départ toutes sont éteintes sauf une cellule
+au centre de la grille qui sera allumée à l'initialisation.
+
+On rajoute de plus une "condition limite" consistant à conserver \textsl{rang} rangées de cellules à gauche et à droite qui resteront toujours éteintes (et influeront sur 
+le résultat obtenu pour l'automate).
+
+On parcourt ensuite toutes les règles possibles pour générer pour chacune un diagramme "espace--temps" où chaque ligne $i$ du diagramme représente un état 
+de la grille au temps $t + i.\Delta t$.
+
+Toujours avec la règle n°30, les trois premières  itérations d'évolution de l'automate sont :\\
+\begin{figure}[ht]
+\begin{center}
+\begin{tabular}{r|c|c|c|c|c|c|c|c|c|c|c|}\cline{2-12}
+état initial & \cellcolor{black!25}\phantom{A} & \phantom{A} & \phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{red}\phantom{A} & 
+\phantom{A} & \phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{black!25}\phantom{A} \\ \cline{2-12}
+i=1 & \cellcolor{black!25}\phantom{A} & \phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{red}\phantom{A} & \cellcolor{red}\phantom{A} & 
+\cellcolor{red}\phantom{A} & \phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{black!25}\phantom{A} \\ \cline{2-12}
+i=2 & \cellcolor{black!25}\phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{red}\phantom{A} & \cellcolor{red}\phantom{A} & \phantom{A} & 
+\phantom{A} & \cellcolor{red}\phantom{A} & \phantom{A} & \phantom{A} & \cellcolor{black!25}\phantom{A} \\ \cline{2-12}
+i=3 & \cellcolor{black!25}\phantom{A} & \phantom{A} & \cellcolor{red}\phantom{A} & \cellcolor{red}\phantom{A} & \phantom{A} & \cellcolor{red}\phantom{A} & 
+\cellcolor{red}\phantom{A} & \cellcolor{red}\phantom{A} & \cellcolor{red}\phantom{A} & \phantom{A} & \cellcolor{black!25}\phantom{A} \\ \cline{2-12}\end{tabular}
+\end{center}
+\caption{En blanc les cellules éteintes, en rouge les cellules allumées, en gris les conditions aux limites (forcées toujours à éteinte)}
+\end{figure}
+
+Une fois que les diagrammes ont été calculés, on les transforme en image png qu'on sauvegarde.
+
+\underline{\textbf{Remarque}} : Si vous voulez gagner du temps à l'exécution ou bien essayer avec un degré supérieur à un, vous pouvez modifier
+le code pour ne sauvegarder qu'une ou aucune image (en mettant la variable \texttt{SAUVE\_IMAGES} à 0 au début du fichier python)\ldots
+Mais les images servent aussi à voir si vous n'avez pas introduit d'erreurs. À ce propos,
+pour vérifier que les fichiers images sont les mêmes qu'en séquentiel pour les valeurs de paramètres par défaut :
+\begin{minted}{shell}
+diff configxxxx.png reference/configxxxx.png
+\end{minted}
+où \texttt{xxxx} est le numéro de la règle.
+
+Enfin, pensez à conserver trois sources bien distincts :
+\begin{itemize}
+\item Un premier fichier contenant la première parallélisation;
+\item Un second fichier contenant la seconde parallélisation;
+\end{itemize}
+
+\subsection{Préliminaires}
+
+Donnez la configuration de votre ordinateur : nombre de c{\oe}urs de calul logiques et physiques.
+
+\subsection{Parallélisation des différentes configurations}
+
+Paralléliser sur les différentes règles en justifiant (dans un commentaire dans votre code) votre choix de parallélisation : distribution statique ou dynamique ?  Granularité choisie ou
+distribution statique choisie ? \ldots
+
+En désactivant la sauvegarde des images après la mise au point, calculez l'accélération obtenue sur votre ordinateur.
+
+\subsection{Parallélisation par partitionnement de la grille de calcul}
+
+PAralléliser le code en distribuant la grille sur les différents processus (en utilisant les cellules fantômes).
+
+En désactivant la sauvegarde des images après la mise au point, calculez l'accélération obtenue sur votre ordinateur.
+
+\subsection{Analyse des deux accélérations}
+
+Laquelle des deux accélérations donne le meilleurs résultat. Pouvions nous le prévoir d'avance (justifiez votre réponse !) ? 
+
+\end{document}
